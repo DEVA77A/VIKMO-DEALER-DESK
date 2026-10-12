@@ -8,7 +8,7 @@ This document details the architectural decisions, trade-offs, validation eviden
 
 #### Implementation Reference
 - `core/models.py` (Lines 7–118)
-- `core/services.py` (Lines 18–258)
+- `core/services.py` (Lines 18–333)
 
 #### Architecture
 The data model separates core business entities into six dedicated models:
@@ -26,7 +26,7 @@ The data model separates core business entities into six dedicated models:
   Products cannot be deleted from the database if they appear in any draft or historical order line item. Line items preserve historical SKU and name snapshots, while `PROTECT` prevents catalog deletions from corrupting active or fulfilled orders.
 - **`OrderItem.order` (`on_delete=models.CASCADE`)**:
   Order items exist strictly within the lifecycle of an order. If a draft order is cancelled or cleared, its line items are cleaned up with the parent order.
-- **Financial Precision**: All monetary values use `Decimal` with 2 decimal places (`max_digits=12, decimal_places=2`). Floating-point binary arithmetic is strictly forbidden. GST (18%) is computed per line item using `ROUND_HALF_UP` (`line_tax = (line_subtotal * Decimal("0.18")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)` in `core/services.py`, lines 72–73), ensuring paisa-level precision without accumulation drift.
+- **Financial Precision**: All monetary values use `Decimal` with 2 decimal places (`max_digits=12, decimal_places=2`). Floating-point binary arithmetic is strictly forbidden. GST (18%) is computed per line item using `ROUND_HALF_UP` (`line_tax = (line_subtotal * Decimal("0.18")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)` in `core/services.py`, lines 96–97), ensuring paisa-level precision without accumulation drift.
 
 ---
 
@@ -118,8 +118,11 @@ Product retrieval utilizes database-backed multi-term token matching and vehicle
   We evaluate models strictly using time-based cutoffs:
   - Cutoff 1: `2026-08-24` (validating on weeks `2026-08-31` to `2026-09-21`).
   - Cutoff 2: `2026-07-27` (validating on weeks `2026-08-03` to `2026-08-24`).
-  - Cutoff 3: `2026-06-29` (validating on weeks `2026-07-06` to `2026-07-27`).
-  Training sets contain only observations with `week_start < cutoff_date`.
+- **Leakage Prevention Line**: Future data leakage is strictly eliminated at line 35 of `forecasting/evaluate.py`:
+  ```python
+  train_sales = sales[sales["week_start"] < cutoff_date].copy()
+  ```
+  Training sets contain only observations with `week_start < cutoff_date`. Any test feature inputs (promotions, weeks to Diwali) use solely known calendar schedules, guaranteeing zero lookahead contamination.
 
 #### Measured Validation Results
 | Method | Validation Cutoff | MAE | WAPE | RMSE |

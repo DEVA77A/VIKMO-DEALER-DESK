@@ -58,7 +58,7 @@ class AssistantEngine:
         self.dealer_id = dealer_id
         self.tools = AssistantToolRegistry(dealer_id=dealer_id)
         self.api_key = getattr(settings, "GEMINI_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
-        self.model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        self.model_name = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
 
     def run(self, message: str) -> dict:
         """Processes a chat turn with LLM or fallback engine."""
@@ -114,17 +114,17 @@ class AssistantEngine:
 
         client = genai.Client(api_key=self.api_key)
 
-        def search_parts(query: str, vehicle: str = None) -> dict:
+        def search_parts(query: str = "", vehicle: str = None, **kwargs) -> dict:
             """Search spare parts catalogue."""
             return self.tools.search_parts(query=query, vehicle=vehicle)
 
-        def check_stock(sku: str) -> dict:
+        def check_stock(sku: str = "", **kwargs) -> dict:
             """Check available inventory stock for a SKU."""
             return self.tools.check_stock(sku=sku)
 
-        def create_draft_order(items: list) -> dict:
+        def create_draft_order(items: list = None, **kwargs) -> dict:
             """Create a draft order for spare parts."""
-            return self.tools.create_draft_order(items=items)
+            return self.tools.create_draft_order(items=items or [])
 
         contents = []
         for h in history:
@@ -156,7 +156,7 @@ class AssistantEngine:
                     if part.function_call:
                         has_func_calls = True
                         fn_name = part.function_call.name
-                        fn_args = part.function_call.args or {}
+                        fn_args = dict(part.function_call.args or {})
 
                         # Execute tool
                         if fn_name == "search_parts":

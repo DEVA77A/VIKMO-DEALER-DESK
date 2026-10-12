@@ -1,7 +1,9 @@
 import json
 from decimal import Decimal
-from django.test import TestCase
+from unittest.mock import patch, MagicMock
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
+from google.genai import types
 from core.models import Product, Dealer, Order, OrderStatus, AssistantConversation
 
 
@@ -204,3 +206,140 @@ class AssistantTestCase(TestCase):
         self.assertEqual(history_b.count(), 2)
         self.assertIn("BRK-1044", history_a.first().content)
         self.assertIn("OIL-1001", history_b.first().content)
+
+    @override_settings(GEMINI_API_KEY="test-mock-gemini-key")
+    @patch("google.genai.Client")
+    def test_gemini_tool_calling_loop_end_to_end(self, mock_client_cls):
+        """Tests genuine Gemini multi-turn tool calling loop across search_parts, check_stock, and create_draft_order."""
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+
+        # Mock turn 1: Model calls search_parts
+        resp1 = types.GenerateContentResponse(
+            candidates=[
+                types.Candidate(
+                    content=types.Content(
+                        role="model",
+                        parts=[
+                            types.Part(
+                                function_call=types.FunctionCall(
+                                    name="search_parts",
+                                    args={"query": "brake", "vehicle": "Bajaj Pulsar 150"},
+                                )
+                            )
+                        ],
+                    )
+                )
+            ]
+        )
+
+        # Mock turn 2: Model calls check_stock
+        resp2 = types.GenerateContentResponse(
+            candidates=[
+                types.Candidate(
+                    content=types.Content(
+                        role="model",
+                        parts=[
+                            types.Part(
+                                function_call=types.FunctionCall(
+                                    name="check_stock",
+                                    args={"sku": "BRK-1044"},
+                                )
+                            )
+                        ],
+                    )
+                )
+            ]
+        )
+
+        # Mock turn 3: Model calls create_draft_order
+        resp3 = types.GenerateContentResponse(
+            candidates=[
+                types.Candidate(
+                    content=types.Content(
+                        role="model",
+                        parts=[
+                            types.Part(
+                                function_call=types.FunctionCall(
+                                    name="create_draft_order",
+                                    args={"items": [{"sku": "BRK-1044", "quantity": 2}]},
+                                )
+                            )
+                        ],
+                    )
+                )
+            ]
+        )
+
+        # Mock turn 4: Model returns final grounded answer
+        resp4 = types.GenerateContentResponse(
+            candidates=[
+                types.Candidate(
+                    content=types.Content(
+                        role="model",
+                        parts=[
+                            types.Part(
+                                text="Found BRK-1044 with 136 units in stock. Draft order created for 2 units."
+                            )
+                        ],
+                    )
+                )
+            ]
+        )
+
+        mock_client.models.generate_content.side_effect = [resp1, resp2, resp3, resp4]
+
+        resp = self.client.post(
+            "/api/assistant/chat/",
+            {
+                "session_id": "gemini-loop-test",
+                "dealer_id": self.dealer.id,
+                "message": "Find brake pads for Pulsar 150, check stock, and order 2 units.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+
+        # 1. Verify text reply returned from LLM
+        self.assertIn("Found BRK-1044", data["reply"])
+        # 2. Verify cited SKUs extracted and verified against DB
+        self.assertEqual(data["cited_skus"], ["BRK-1044"])
+        # 3. Verify all 3 tool calls executed in chronological sequence
+        tool_names = [tc["name"] for tc in data["tool_calls"]]
+        self.assertEqual(tool_names, ["search_parts", "check_stock", "create_draft_order"])
+        # 4. Verify action was produced
+        self.assertEqual(len(data["actions"]), 1)
+        self.assertEqual(data["actions"][0]["type"], "draft_order_created")
+        order_num = data["actions"][0]["order_number"]
+        # 5. Verify order exists in DB with DRAFT status and correct item qty
+        order = Order.objects.get(order_number=order_num)
+        self.assertEqual(order.status, OrderStatus.DRAFT)
+        self.assertEqual(order.items.first().quantity, 2)
+        # 6. Verify client.models.generate_content called 4 times
+        self.assertEqual(mock_client.models.generate_content.call_count, 4)
+
+    @override_settings(GEMINI_API_KEY="test-mock-gemini-key")
+    @patch("google.genai.Client")
+    def test_gemini_api_failure_falls_back_deterministically(self, mock_client_cls):
+        """Tests that when Gemini API call throws an error, engine falls back gracefully."""
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_client.models.generate_content.side_effect = RuntimeError("Gemini Quota Exceeded")
+
+        resp = self.client.post(
+            "/api/assistant/chat/",
+            {
+                "session_id": "fallback-test",
+                "dealer_id": self.dealer.id,
+                "message": "Check stock for BRK-1044",
+            },
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("BRK-1044", data["cited_skus"])
+        self.assertIn("136", data["reply"])
+

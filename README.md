@@ -15,7 +15,7 @@ The platform provides:
 - **Core Catalogue & Dealer Management**: 600 catalogue products and 25 distributors.
 - **Inventory & Live Stock Updates**: Real-time warehouse stock tracking and manual count corrections.
 - **Order Engine**: Validated draft order creation, idempotency key guarantees, and complete status lifecycle management (`DRAFT` $\rightarrow$ `CONFIRMED` $\rightarrow$ `DISPATCHED` $\rightarrow$ `DELIVERED` / `CANCELLED`).
-- **AI Dealer Assistant**: Grounded GenAI conversational assistant powered by Google Gemini (`gemini-2.5-flash`), supporting multi-turn tool calling (`search_parts`, `check_stock`, `create_draft_order`), prompt-injection hardening, and session memory isolation.
+- **AI Dealer Assistant**: Grounded GenAI conversational assistant powered by Google Gemini (`gemini-1.5-flash`), supporting multi-turn tool calling (`search_parts`, `check_stock`, `create_draft_order`), prompt-injection hardening, and session memory isolation.
 - **Demand Forecasting (ML)**: 4-week future demand forecasting for 40 designated SKUs, accounting for promotional calendar spikes, moving Diwali festival seasonality, and intermittent demand.
 - **Automated Reorder Suggestions**: Dynamic safety stock, lead time demand, and reorder point calculations based on live warehouse inventory.
 - **Supplier Synchronisation (Optional Feature)**: Resilient external catalogue synchronization with cursor pagination, exponential backoff, rate limiting (HTTP 429), and atomic database updates.
@@ -30,7 +30,7 @@ The platform provides:
 | **Web Framework** | Django 5.2 / Django REST Framework 3.15+ |
 | **Database** | PostgreSQL 16 (strict requirement; no SQLite) |
 | **PostgreSQL Driver**| `psycopg` (v3) binary |
-| **LLM Provider** | Google Gemini (`google-genai` SDK, model `gemini-2.5-flash`) |
+| **LLM Provider** | Google Gemini (`google-genai` SDK, model `gemini-1.5-flash`) |
 | **Machine Learning**| `pandas`, `numpy`, `scikit-learn` |
 | **HTTP Client** | `requests` |
 
@@ -144,7 +144,7 @@ curl http://localhost:8000/api/health/
 
 ## 6. AI Assistant: Tools, Provider & Guardrails
 
-- **LLM Provider**: Google Gemini via official `google-genai` SDK (`gemini-2.5-flash`).
+- **LLM Provider**: Google Gemini via official `google-genai` SDK (`gemini-1.5-flash`).
 - **Function Calling**: Real function-calling execution loop with server-side validation.
 - **Prompt Injection Defense**:
   - Catalogue text and descriptions are treated as inert, untrusted DATA, never as executable instructions.
@@ -186,7 +186,7 @@ For each forecast SKU:
 
 ## 8. Verification & Testing
 
-### Run Automated Test Suite (27 tests)
+### Run Automated Test Suite (29 tests)
 ```bash
 python manage.py test core
 ```
