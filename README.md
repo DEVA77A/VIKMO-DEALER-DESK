@@ -214,6 +214,7 @@ python smoke_test.py --base-url http://localhost:8000 --all
 - [x] Forecast & Reorder Endpoints (`GET /api/forecast/{sku}/`, `GET /api/reorder-suggestions/`)
 - [x] **[OPTIONAL]** Order Engine Lifecycle (`CONFIRMED`, `DISPATCHED`, `DELIVERED`, `CANCELLED`, atomic stock lock)
 - [x] **[OPTIONAL]** Supplier Sync (`POST /api/sync/supplier/` with cursor pagination, 429 Retry-After, duplicate resolution)
+- [x] **[OPTIONAL]** Frontend Portal (React + Vite + Tailwind CSS + Recharts + Lucide React in `frontend/`)
 
 ---
 
@@ -222,3 +223,82 @@ python smoke_test.py --base-url http://localhost:8000 --all
 For full technical rationale and interview preparation, refer to:
 - [`DECISIONS.md`](file:///c:/VIKMO%20DealerDesk%20Assignment/DECISIONS.md) — Answers to all 8 evaluation questions with exact line numbers.
 - [`ENGINEERING_NOTES.md`](file:///c:/VIKMO%20DealerDesk%20Assignment/ENGINEERING_NOTES.md) — Architecture notes and interview defence guide.
+
+---
+
+## 11. Frontend Web Application (Part E — Bonus Track)
+
+A responsive, production-quality SaaS web application built with **React**, **Vite**, **Tailwind CSS**, **React Router**, and **Recharts**, connecting directly to DealerDesk's Django REST endpoints.
+
+### 11.1 Architecture & Stack
+- **Framework & Bundler:** React 19, Vite 8 (`frontend/`)
+- **Styling:** Tailwind CSS v4 with modern slate/amber theme
+- **Routing:** React Router DOM (v7)
+- **Data Visualization:** Recharts (4-week demand curves)
+- **Icons:** Lucide React
+- **Service Layer:** Clean, decoupled HTTP client ([`frontend/src/services/api.js`](file:///c:/VIKMO%20DealerDesk%20Assignment/frontend/src/services/api.js)) with configurable base URL and error decoding.
+
+### 11.2 Prerequisites & Setup
+
+#### Backend Setup (Terminal 1)
+```bash
+# Activate virtual environment
+.venv\Scripts\activate   # Linux/macOS: source .venv/bin/activate
+
+# Migrate & seed
+python manage.py migrate --noinput
+python manage.py seed_data
+
+# Start backend server
+python manage.py runserver 0.0.0.0:8000 --noreload
+```
+
+#### Frontend Setup (Terminal 2)
+```bash
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Start Vite development server (proxies /api to http://127.0.0.1:8000)
+npm run dev
+```
+
+Open your browser at `http://127.0.0.1:5173/` or `http://localhost:5173/`.
+
+### 11.3 Production Build
+To validate or build the static production bundle:
+```bash
+cd frontend
+npm run build
+```
+*(Compiled bundle output generated in `frontend/dist/` in <2s with 0 errors).*
+
+### 11.4 Application Views & Capabilities
+1. **Operations Dashboard (`/`)**:
+   - Live KPI cards: Total Catalogue (600), Network Dealers (25), Total Orders, and Urgent Reorder Alerts.
+   - Urgent Reorder Suggestions widget (highlights SKUs breaching safety thresholds).
+   - Recent Orders table with real status chips and live backend health heartbeat.
+2. **Product Catalogue (`/products`)**:
+   - Multi-term search across SKU, part name, and brand.
+   - Category filtering and vehicle fitment dropdowns.
+   - Server-side pagination controls (10, 20, 50, 100 rows).
+   - "Adjust Inventory" modal (`PUT /api/inventory/{sku}/`).
+   - "Add Product" modal (`POST /api/products/`).
+3. **Authorized Dealers (`/dealers`)**:
+   - 25 South India distributors with location, contact info, GSTIN, and credit limits.
+   - "Register Dealer" modal (`POST /api/dealers/`).
+   - "Chat as Dealer" direct shortcut.
+4. **Order Engine Lifecycle (`/orders`)**:
+   - Filter by status (`DRAFT`, `CONFIRMED`, `DISPATCHED`, `DELIVERED`, `CANCELLED`).
+   - "New Draft Order" modal with item lines and duplicate-safe idempotency keys.
+   - "Inspect Order" slide-over with line items, unit prices, 18% GST tax, and total.
+   - Lifecycle action triggers: `Confirm & Lock Stock`, `Cancel Draft`, `Dispatch`, `Deliver`, `Cancel & Restore Stock`.
+5. **AI Dealer Assistant (`/assistant`)**:
+   - Grounded conversational interface with dealer selector and session memory isolation.
+   - Suggested prompts for parts search, stock inquiry, and draft order creation.
+   - Displays assistant response, clickable cited SKU badges, expandable tool-calls inspector, and draft order action cards with direct order inspection links.
+6. **Demand Forecasting & Reorder Analytics (`/forecasting`)**:
+   - 4-week demand curve visualization using Recharts.
+   - SKU selector across all 40 forecast items.
+   - Complete 40-SKU reorder table with live warehouse stock, lead time ($L$), lead time demand, safety stock buffer, reorder point, and recommended reorder quantity.
