@@ -12,13 +12,19 @@ async function request(endpoint, options = {}) {
     ...options.headers,
   };
 
+  const controller = new AbortController();
+  const timeoutMs = options.timeout || 30000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   const config = {
     ...options,
     headers,
+    signal: options.signal || controller.signal,
   };
 
   try {
     const res = await fetch(url, config);
+    clearTimeout(timeoutId);
     const contentType = res.headers.get("content-type");
     let data = null;
 
@@ -41,7 +47,10 @@ async function request(endpoint, options = {}) {
 
     return data;
   } catch (error) {
-    if (!error.status) {
+    clearTimeout(timeoutId);
+    if (error.name === "AbortError") {
+      error.message = "Request timed out. The server took too long to respond.";
+    } else if (!error.status) {
       error.message = error.message || "Network error. Please check backend connection.";
     }
     throw error;

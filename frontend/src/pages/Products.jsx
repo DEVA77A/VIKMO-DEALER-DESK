@@ -103,7 +103,7 @@ export function Products() {
       setProducts(res.results || []);
       setTotalCount(res.count || 0);
     } catch (err) {
-      setError(err.message || "Failed to load product catalogue.");
+      setError(err.message || "Failed to load products catalogue.");
     } finally {
       setLoading(false);
     }
@@ -111,27 +111,27 @@ export function Products() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setPage(1);
     setSearch(searchInput);
+    setPage(1);
   };
 
   const handleStockUpdate = async (e) => {
     e.preventDefault();
-    if (!editProduct) return;
-    const qty = parseInt(newStock, 10);
-    if (isNaN(qty) || qty < 0) {
-      setStockError("Stock quantity must be a non-negative integer.");
-      return;
-    }
-
     setStockSubmitting(true);
     setStockError(null);
     try {
-      await updateInventory(editProduct.sku, qty, stockReason);
+      const qty = parseInt(newStock, 10);
+      if (isNaN(qty) || qty < 0) {
+        throw new Error("Quantity must be a non-negative integer.");
+      }
+      await updateInventory(editProduct.sku, {
+        quantity: qty,
+        reason: stockReason.trim() || undefined,
+      });
       setEditProduct(null);
       fetchProducts();
     } catch (err) {
-      setStockError(err.message || "Failed to update inventory.");
+      setStockError(err.message || "Failed to update stock.");
     } finally {
       setStockSubmitting(false);
     }
@@ -142,7 +142,14 @@ export function Products() {
     setCreateSubmitting(true);
     setCreateError(null);
     try {
-      await createProduct(createData);
+      const p = parseFloat(createData.price);
+      if (isNaN(p) || p <= 0) {
+        throw new Error("Price must be a positive number.");
+      }
+      await createProduct({
+        ...createData,
+        price: p.toFixed(2),
+      });
       setShowCreateModal(false);
       setCreateData({
         sku: "",
@@ -164,20 +171,27 @@ export function Products() {
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Title & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#73956A]" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#817568]">
+              Verified Inventory
+            </span>
+          </div>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-[#211D1B]">
             Product Catalogue
           </h1>
-          <p className="text-sm text-slate-500">
-            Browse and manage 600 catalogue parts, live warehouse stock, and pricing.
+          <p className="text-sm text-[#817568] mt-1 max-w-xl">
+            Browse and manage 600 catalogue items, live warehouse stock levels, and distributor pricing.
           </p>
         </div>
+
         <button
           onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 rounded-lg text-sm font-medium shadow-xs self-start"
+          className="btn-primary text-sm shadow-xs self-start sm:self-auto flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           <span>Add Product</span>
@@ -185,21 +199,21 @@ export function Products() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
-        <form onSubmit={handleSearchSubmit} className="flex gap-2">
+      <div className="card-warm p-5 sm:p-6 rounded-3xl border border-[#E8D5BD] space-y-4">
+        <form onSubmit={handleSearchSubmit} className="flex gap-2 sm:gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+            <Search className="w-4.5 h-4.5 absolute left-3.5 top-3.5 text-[#817568]" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search by SKU, part name, or brand..."
-              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              className="input-warm w-full pl-10 pr-4 py-2.5 text-sm"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+            className="btn-primary text-xs px-5 py-2.5"
           >
             Search
           </button>
@@ -211,23 +225,25 @@ export function Products() {
                 setSearch("");
                 setPage(1);
               }}
-              className="px-3 py-2 text-slate-500 hover:text-slate-700 text-sm"
+              className="btn-ghost text-xs px-4"
             >
               Clear
             </button>
           )}
         </form>
 
-        <div className="flex flex-wrap gap-3 pt-1 border-t border-slate-100">
+        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-[#E8D5BD]">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">Category:</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#817568]">
+              Category:
+            </span>
             <select
               value={selectedCategory}
               onChange={(e) => {
                 setSelectedCategory(e.target.value);
                 setPage(1);
               }}
-              className="text-xs bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="input-warm text-xs py-1.5 px-3"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -238,14 +254,16 @@ export function Products() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">Fitment:</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#817568]">
+              Fitment:
+            </span>
             <select
               value={selectedVehicle}
               onChange={(e) => {
                 setSelectedVehicle(e.target.value);
                 setPage(1);
               }}
-              className="text-xs bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="input-warm text-xs py-1.5 px-3"
             >
               {VEHICLES.map((v) => (
                 <option key={v} value={v}>
@@ -256,14 +274,16 @@ export function Products() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-slate-500">Rows:</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#817568]">
+              Rows:
+            </span>
             <select
               value={pageSize}
               onChange={(e) => {
                 setPageSize(Number(e.target.value));
                 setPage(1);
               }}
-              className="text-xs bg-slate-50 border border-slate-200 rounded-md px-2 py-1 text-slate-700"
+              className="input-warm text-xs py-1.5 px-3"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -275,15 +295,15 @@ export function Products() {
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="card-warm rounded-3xl border border-[#E8D5BD] overflow-hidden">
         {loading ? (
           <div className="p-6">
             <TableSkeleton rows={8} cols={6} />
           </div>
         ) : error ? (
-          <div className="p-6 text-center text-red-600">
-            <AlertCircle className="w-8 h-8 mx-auto mb-2 text-red-500" />
-            <p className="text-sm font-medium">{error}</p>
+          <div className="p-8 text-center text-[#B94A3A]">
+            <AlertCircle className="w-8 h-8 mx-auto mb-2 text-[#B94A3A]" />
+            <p className="text-sm font-semibold">{error}</p>
           </div>
         ) : products.length === 0 ? (
           <EmptyState
@@ -292,43 +312,45 @@ export function Products() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <table className="w-full text-left text-sm divide-y divide-[#E8D5BD]/60">
+              <thead className="bg-[#EBD1B2] text-xs font-semibold text-[#817568] uppercase tracking-wider">
                 <tr>
-                  <th className="px-5 py-3.5">SKU</th>
-                  <th className="px-5 py-3.5">Product Name</th>
-                  <th className="px-5 py-3.5">Category</th>
-                  <th className="px-5 py-3.5">Vehicle Fitment</th>
-                  <th className="px-5 py-3.5">Price</th>
-                  <th className="px-5 py-3.5">Stock</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">SKU</th>
+                  <th className="px-5 py-3.5 min-w-[220px]">Product Name</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Category</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Vehicle Fitment</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Price</th>
+                  <th className="px-5 py-3.5 whitespace-nowrap">Stock</th>
+                  <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E8D5BD]/60">
                 {products.map((p) => (
-                  <tr key={p.sku} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-5 py-3.5 font-mono text-xs font-semibold text-slate-900">
+                  <tr key={p.sku} className="hover:bg-[#FAF2E8] transition-colors">
+                    <td className="px-5 py-3.5 font-mono text-xs font-bold text-[#211D1B] whitespace-nowrap">
                       {p.sku}
                     </td>
                     <td className="px-5 py-3.5">
-                      <div className="font-medium text-slate-900">{p.name}</div>
-                      <div className="text-xs text-slate-400 font-normal">{p.brand}</div>
+                      <div className="font-semibold text-[#211D1B]">{p.name}</div>
+                      <div className="text-xs text-[#817568]">{p.brand}</div>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-slate-600">
-                      <span className="px-2 py-0.5 rounded bg-slate-100 font-medium">
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#EBD1B2]/60 text-xs font-medium text-[#211D1B]">
                         {p.category}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-slate-600">
+                    <td className="px-5 py-3.5 text-xs text-[#817568] whitespace-nowrap">
                       {p.vehicle_fitment}
                     </td>
-                    <td className="px-5 py-3.5 font-medium text-slate-900">
-                      ₹{parseFloat(p.price || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    <td className="px-5 py-3.5 font-semibold text-[#211D1B] whitespace-nowrap">
+                      ₹{parseFloat(p.price || 0).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                      })}
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3.5 whitespace-nowrap">
                       <StockBadge stock={p.stock} />
                     </td>
-                    <td className="px-5 py-3.5 text-right">
+                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
                       <button
                         onClick={() => {
                           setEditProduct(p);
@@ -336,7 +358,7 @@ export function Products() {
                           setStockReason("");
                           setStockError(null);
                         }}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-md transition-colors"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#BE571B] bg-[#F4D5B7] hover:bg-[#EBD1B2] px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                         <span>Adjust</span>
@@ -351,29 +373,29 @@ export function Products() {
 
         {/* Pagination Bar */}
         {!loading && totalCount > 0 && (
-          <div className="px-5 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-600">
+          <div className="px-6 py-4 border-t border-[#E8D5BD] bg-[#EBD1B2]/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#817568]">
             <div>
-              Showing <span className="font-semibold">{(page - 1) * pageSize + 1}</span> to{" "}
-              <span className="font-semibold">
+              Showing <span className="font-bold text-[#211D1B]">{(page - 1) * pageSize + 1}</span> to{" "}
+              <span className="font-bold text-[#211D1B]">
                 {Math.min(page * pageSize, totalCount)}
               </span>{" "}
-              of <span className="font-semibold">{totalCount}</span> items
+              of <span className="font-bold text-[#211D1B]">{totalCount}</span> parts
             </div>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1.5 rounded bg-white border border-slate-200 font-medium disabled:opacity-40 hover:bg-slate-100 transition-colors"
+                className="btn-secondary text-xs px-3.5 py-1.5 disabled:opacity-40"
               >
                 Previous
               </button>
-              <span className="px-2 font-medium">
+              <span className="px-2 font-semibold text-[#211D1B]">
                 Page {page} of {totalPages}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 rounded bg-white border border-slate-200 font-medium disabled:opacity-40 hover:bg-slate-100 transition-colors"
+                className="btn-secondary text-xs px-3.5 py-1.5 disabled:opacity-40"
               >
                 Next
               </button>
@@ -384,28 +406,33 @@ export function Products() {
 
       {/* Adjust Inventory Modal */}
       {editProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-semibold text-slate-900 text-base">
-                Adjust Inventory: {editProduct.sku}
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#211D1B]/50 backdrop-blur-xs">
+          <div className="card-warm bg-[#F7E6D0] rounded-3xl border border-[#E8D5BD] shadow-2xl max-w-md w-full p-6 sm:p-7 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E8D5BD] pb-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#D96A25]">
+                  STOCK ADJUSTMENT
+                </span>
+                <h3 className="font-display font-bold text-xl text-[#211D1B]">
+                  {editProduct.sku}
+                </h3>
+              </div>
               <button
                 onClick={() => setEditProduct(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="p-1.5 rounded-full hover:bg-[#EBD1B2] text-[#817568]"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[#817568] -mt-1">
               {editProduct.name} ({editProduct.vehicle_fitment})
             </p>
 
-            <form onSubmit={handleStockUpdate} className="space-y-4">
+            <form onSubmit={handleStockUpdate} className="space-y-4 pt-1">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  New Stock Count (Units)
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#817568] mb-1.5">
+                  New Stock Count (Units) *
                 </label>
                 <input
                   type="number"
@@ -413,41 +440,41 @@ export function Products() {
                   required
                   value={newStock}
                   onChange={(e) => setNewStock(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="input-warm w-full text-sm font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#817568] mb-1.5">
                   Adjustment Reason (Optional)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Warehouse count audit, damaged stock write-off"
+                  placeholder="e.g. Warehouse count audit, damaged stock"
                   value={stockReason}
                   onChange={(e) => setStockReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="input-warm w-full text-sm"
                 />
               </div>
 
               {stockError && (
-                <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-lg">
+                <div className="p-3 bg-[#F7E3E0] text-[#9E3324] text-xs font-medium rounded-xl border border-[#EBBFB8]">
                   {stockError}
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setEditProduct(null)}
-                  className="px-4 py-2 border border-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-50"
+                  className="btn-secondary text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={stockSubmitting}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold rounded-lg text-sm disabled:opacity-50"
+                  className="btn-primary text-xs disabled:opacity-50"
                 >
                   {stockSubmitting ? "Updating..." : "Save Stock Count"}
                 </button>
@@ -459,24 +486,29 @@ export function Products() {
 
       {/* Create Product Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-semibold text-slate-900 text-base">
-                Create New Catalogue Part
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#211D1B]/50 backdrop-blur-xs">
+          <div className="card-warm bg-[#F7E6D0] rounded-3xl border border-[#E8D5BD] shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#E8D5BD] pb-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#D96A25]">
+                  CATALOGUE EXPANSION
+                </span>
+                <h3 className="font-display font-bold text-xl text-[#211D1B]">
+                  Create New Part
+                </h3>
+              </div>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="p-1.5 rounded-full hover:bg-[#EBD1B2] text-[#817568]"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateProduct} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleCreateProduct} className="space-y-4 pt-1">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#817568] mb-1">
                     SKU Code *
                   </label>
                   <input
@@ -484,12 +516,14 @@ export function Products() {
                     required
                     placeholder="e.g. BRK-9901"
                     value={createData.sku}
-                    onChange={(e) => setCreateData({ ...createData, sku: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    onChange={(e) =>
+                      setCreateData({ ...createData, sku: e.target.value.toUpperCase() })
+                    }
+                    className="input-warm w-full text-sm font-mono uppercase"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#817568] mb-1">
                     Brand *
                   </label>
                   <input
@@ -498,34 +532,34 @@ export function Products() {
                     placeholder="e.g. Endurance, Bosch"
                     value={createData.brand}
                     onChange={(e) => setCreateData({ ...createData, brand: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="input-warm w-full text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#817568] mb-1">
                   Product Name *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Front Disc Brake Pad Set"
+                  placeholder="e.g. Disc Brake Pad Set Front"
                   value={createData.name}
                   onChange={(e) => setCreateData({ ...createData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="input-warm w-full text-sm"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#817568] mb-1">
                     Category *
                   </label>
                   <select
                     value={createData.category}
                     onChange={(e) => setCreateData({ ...createData, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="input-warm w-full text-sm"
                   >
                     {CATEGORIES.filter((c) => c !== "All Categories").map((c) => (
                       <option key={c} value={c}>
@@ -535,69 +569,76 @@ export function Products() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Price (₹) *
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#817568] mb-1">
+                    Vehicle Fitment *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    placeholder="e.g. 1450.00"
-                    value={createData.price}
-                    onChange={(e) => setCreateData({ ...createData, price: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
+                  <select
+                    value={createData.vehicle_fitment}
+                    onChange={(e) =>
+                      setCreateData({ ...createData, vehicle_fitment: e.target.value })
+                    }
+                    className="input-warm w-full text-sm"
+                  >
+                    {VEHICLES.filter((v) => v !== "All Vehicles").map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Vehicle Fitment *
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#817568] mb-1">
+                  Price (₹ INR, excluding GST) *
                 </label>
                 <input
-                  type="text"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
                   required
-                  placeholder="e.g. Bajaj Pulsar 150 or Universal"
-                  value={createData.vehicle_fitment}
-                  onChange={(e) => setCreateData({ ...createData, vehicle_fitment: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder="e.g. 1499.00"
+                  value={createData.price}
+                  onChange={(e) => setCreateData({ ...createData, price: e.target.value })}
+                  className="input-warm w-full text-sm font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#817568] mb-1">
                   Description
                 </label>
                 <textarea
                   rows="2"
-                  placeholder="Product specification notes..."
+                  placeholder="Specifications, compatibility notes..."
                   value={createData.description}
-                  onChange={(e) => setCreateData({ ...createData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  onChange={(e) =>
+                    setCreateData({ ...createData, description: e.target.value })
+                  }
+                  className="input-warm w-full text-sm"
                 />
               </div>
 
               {createError && (
-                <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-lg">
+                <div className="p-3 bg-[#F7E3E0] text-[#9E3324] text-xs font-medium rounded-xl border border-[#EBBFB8]">
                   {createError}
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-50"
+                  className="btn-secondary text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createSubmitting}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg text-sm disabled:opacity-50"
+                  className="btn-primary text-xs disabled:opacity-50"
                 >
-                  {createSubmitting ? "Creating..." : "Create Product"}
+                  {createSubmitting ? "Creating..." : "Save Product"}
                 </button>
               </div>
             </form>

@@ -91,8 +91,28 @@ REST_FRAMEWORK = {
 # ---- Assignment settings --------------------------------------------------------------
 DATA_DIR = BASE_DIR / "data"
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
+GEMINI_MODEL_PREFERENCES = [
+    m.strip()
+    for m in os.environ.get(
+        "GEMINI_MODEL_PREFERENCES",
+        "gemini-3.5-flash-lite,gemini-flash-lite-latest,gemini-3.8-flash,gemini-3.1-flash-lite",
+    ).split(",")
+    if m.strip()
+]
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b")
+GROQ_MODEL_PREFERENCES = [
+    m.strip()
+    for m in os.environ.get(
+        "GROQ_MODEL_PREFERENCES",
+        "qwen/qwen3.8-27b,openai/gpt-oss-120b,llama-3.3-70b-versatile",
+    ).split(",")
+    if m.strip()
+]
+GROQ_ENABLED = os.environ.get("GROQ_ENABLED", "true").lower() in ("true", "1", "yes")
 SUPPLIER_API_URL = os.environ.get("SUPPLIER_API_URL", "http://127.0.0.1:8099")
 SUPPLIER_API_KEY = os.environ.get("SUPPLIER_API_KEY", "")
+

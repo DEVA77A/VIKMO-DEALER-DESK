@@ -9,6 +9,8 @@ import {
   TrendingUp,
   Bot,
   RefreshCw,
+  Sparkles,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   getProducts,
@@ -74,15 +76,19 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div>
-          <div className="h-8 bg-slate-200 rounded w-48 mb-2 animate-pulse" />
-          <div className="h-4 bg-slate-100 rounded w-96 animate-pulse" />
+          <div className="h-10 bg-[#EBD1B2] rounded-2xl w-64 mb-3 animate-pulse" />
+          <div className="h-4 bg-[#EBD1B2]/60 rounded-xl w-96 animate-pulse" />
         </div>
         <CardSkeleton count={4} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TableSkeleton rows={4} cols={3} />
-          <TableSkeleton rows={4} cols={3} />
+          <div className="card-warm p-6">
+            <TableSkeleton rows={4} cols={3} />
+          </div>
+          <div className="card-warm p-6">
+            <TableSkeleton rows={4} cols={3} />
+          </div>
         </div>
       </div>
     );
@@ -90,12 +96,12 @@ export function Dashboard() {
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 border border-red-200 rounded-xl text-red-800">
-        <h3 className="font-semibold text-base mb-1">Error Loading Dashboard</h3>
-        <p className="text-sm mb-4">{error}</p>
+      <div className="p-8 card-warm border-[#B94A3A]/40 bg-[#F7E3E0] text-[#9E3324] rounded-3xl">
+        <h3 className="font-display font-bold text-lg mb-1">Error Loading Dashboard</h3>
+        <p className="text-sm mb-4 text-[#817568]">{error}</p>
         <button
           onClick={loadDashboardData}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
+          className="btn-primary"
         >
           Try Again
         </button>
@@ -104,148 +110,184 @@ export function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-8">
+      {/* Editorial Welcome Header (Inspired by "Morning, Deva." from screenshot) */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Operations Dashboard
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#73956A]" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#817568]">
+              Automotive Distribution Network
+            </span>
+          </div>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-[#211D1B]">
+            Morning, Operations.
           </h1>
-          <p className="text-sm text-slate-500">
-            Real-time distributor operations, catalogue health, and demand alerts.
+          <p className="text-sm text-[#817568] mt-1 max-w-xl">
+            Live catalogue inventory, dealer draft orders, and 4-week machine learning demand forecasts.
           </p>
         </div>
+
         <div className="flex items-center gap-3">
-          <Link
-            to="/assistant"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 rounded-lg text-sm font-medium shadow-xs"
-          >
-            <Bot className="w-4 h-4 text-amber-400" />
-            <span>AI Assistant</span>
-          </Link>
           <button
             onClick={loadDashboardData}
-            className="p-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-100"
-            title="Refresh dashboard"
+            className="btn-secondary text-xs flex items-center gap-2"
+            title="Refresh dashboard metrics"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5 text-[#D96A25]" />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
 
+      {/* Prominent Feature Card (Directly inspired by the prompt card in the reference screenshot) */}
+      <div className="relative overflow-hidden card-warm p-6 sm:p-8 rounded-3xl border border-[#E8D5BD]">
+        {/* Decorative organic shape */}
+        <div className="organic-shape" />
+
+        <div className="relative z-10 max-w-2xl">
+          <div className="text-[11px] font-bold uppercase tracking-widest text-[#D96A25] mb-2 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>GENAI ASSISTANT</span>
+          </div>
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#211D1B] leading-tight mb-3">
+            Looking for compatible parts or creating dealer draft orders?
+          </h2>
+          <p className="text-sm text-[#817568] mb-6 leading-relaxed">
+            Ask the AI Assistant for live stock lookups, Pulsar or Duke fitments, and instant order creation with real catalog pricing.
+          </p>
+
+          <div className="flex items-center gap-4 flex-wrap">
+            <Link to="/assistant" className="btn-primary text-sm shadow-xs">
+              <span>Start assistant</span>
+              <ArrowRight className="w-4 h-4 ml-1.5 inline" />
+            </Link>
+            <Link
+              to="/products"
+              className="text-sm font-semibold text-[#817568] hover:text-[#D96A25] transition-colors"
+            >
+              browse catalogue
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {/* Total Catalogue */}
+        <div className="card-warm p-6 rounded-3xl transition-transform hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#817568]">
               Total Catalogue
             </span>
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-              <Package className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-2xl bg-[#EBD1B2] flex items-center justify-center text-[#D96A25]">
+              <Package className="w-4.5 h-4.5" />
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">
+          <div className="font-display text-3xl font-bold text-[#211D1B]">
             {stats.totalProducts.toLocaleString()}
           </div>
-          <div className="mt-1 text-xs text-slate-500">Active SKUs in catalogue</div>
+          <div className="mt-1 text-xs text-[#817568]">Active SKUs in catalogue</div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+        {/* Network Dealers */}
+        <div className="card-warm p-6 rounded-3xl transition-transform hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#817568]">
               Network Dealers
             </span>
-            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-              <Users className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-2xl bg-[#EBD1B2] flex items-center justify-center text-[#D96A25]">
+              <Users className="w-4.5 h-4.5" />
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">
+          <div className="font-display text-3xl font-bold text-[#211D1B]">
             {stats.totalDealers.toLocaleString()}
           </div>
-          <div className="mt-1 text-xs text-slate-500">South India distributors</div>
+          <div className="mt-1 text-xs text-[#817568]">Distributors in South India</div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+        {/* Total Orders */}
+        <div className="card-warm p-6 rounded-3xl transition-transform hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#817568]">
               Total Orders
             </span>
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
-              <ShoppingCart className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-2xl bg-[#EBD1B2] flex items-center justify-center text-[#D96A25]">
+              <ShoppingCart className="w-4.5 h-4.5" />
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">
+          <div className="font-display text-3xl font-bold text-[#211D1B]">
             {stats.totalOrders.toLocaleString()}
           </div>
-          <div className="mt-1 text-xs text-slate-500">Recorded orders & drafts</div>
+          <div className="mt-1 text-xs text-[#817568]">Recorded orders & drafts</div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+        {/* Reorder Alerts */}
+        <div className="card-warm p-6 rounded-3xl transition-transform hover:-translate-y-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#817568]">
               Reorder Alerts
             </span>
-            <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
-              <AlertTriangle className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-2xl bg-[#F4D5B7] flex items-center justify-center text-[#D96A25]">
+              <AlertTriangle className="w-4.5 h-4.5" />
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">
+          <div className="font-display text-3xl font-bold text-[#D96A25]">
             {stats.urgentReordersCount}
           </div>
-          <div className="mt-1 text-xs text-amber-600 font-medium">
+          <div className="mt-1 text-xs text-[#BE571B] font-semibold">
             SKUs below safety stock point
           </div>
         </div>
       </div>
 
       {/* Two Column Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         {/* Urgent Reorder Recommendations */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="card-warm rounded-3xl p-6 sm:p-7 flex flex-col">
+          <div className="flex items-center justify-between pb-5 border-b border-[#E8D5BD]">
             <div>
-              <h2 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-amber-500" />
-                <span>Urgent Reorder Suggestions</span>
+              <div className="text-[11px] font-bold uppercase tracking-widest text-[#D96A25] mb-1">
+                INVENTORY RISK
+              </div>
+              <h2 className="font-display text-xl font-bold text-[#211D1B] flex items-center gap-2">
+                Urgent Reorder Suggestions
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Driven by 4-week ML forecast and lead times.
-              </p>
             </div>
             <Link
               to="/forecasting"
-              className="text-xs font-medium text-amber-600 hover:text-amber-700 flex items-center gap-1"
+              className="text-xs font-bold text-[#D96A25] hover:text-[#BE571B] flex items-center gap-1"
             >
               <span>View all 40</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowUpRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="p-5 flex-1 overflow-x-auto">
+          <div className="pt-4 flex-1 overflow-x-auto">
             {urgentReorders.length === 0 ? (
               <EmptyState
                 title="All items well-stocked"
                 description="No SKUs currently breach safety-stock reorder thresholds."
               />
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="text-xs font-semibold text-slate-400 border-b border-slate-100">
-                    <th className="pb-2">SKU</th>
-                    <th className="pb-2">Live Stock</th>
-                    <th className="pb-2">Lead Time Demand</th>
-                    <th className="pb-2 text-right">Reorder Qty</th>
+              <table className="w-full text-left text-sm divide-y divide-[#E8D5BD]/60">
+                <thead className="bg-[#EBD1B2] text-xs font-semibold text-[#817568] uppercase tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3 rounded-l-2xl">SKU</th>
+                    <th className="px-4 py-3">Live Stock</th>
+                    <th className="px-4 py-3">Lead Demand</th>
+                    <th className="px-4 py-3 text-right rounded-r-2xl">Reorder Qty</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E8D5BD]/60">
                   {urgentReorders.map((item) => (
-                    <tr key={item.sku} className="hover:bg-slate-50">
-                      <td className="py-2.5 font-medium text-slate-900">{item.sku}</td>
-                      <td className="py-2.5">
+                    <tr key={item.sku} className="hover:bg-[#FAF2E8] transition-colors">
+                      <td className="px-4 py-3 font-semibold text-[#211D1B]">{item.sku}</td>
+                      <td className="px-4 py-3">
                         <StockBadge stock={item.current_stock} />
                       </td>
-                      <td className="py-2.5 text-slate-600">{item.lead_time_demand} units</td>
-                      <td className="py-2.5 text-right font-bold text-amber-600">
+                      <td className="px-4 py-3 text-[#817568]">{item.lead_time_demand} units</td>
+                      <td className="px-4 py-3 text-right font-bold text-[#D96A25]">
                         +{item.reorder_qty}
                       </td>
                     </tr>
@@ -257,61 +299,62 @@ export function Dashboard() {
         </div>
 
         {/* Recent Orders */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="card-warm rounded-3xl p-6 sm:p-7 flex flex-col">
+          <div className="flex items-center justify-between pb-5 border-b border-[#E8D5BD]">
             <div>
-              <h2 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-blue-500" />
-                <span>Recent Orders</span>
+              <div className="text-[11px] font-bold uppercase tracking-widest text-[#817568] mb-1">
+                COMMERCE ACTIVITY
+              </div>
+              <h2 className="font-display text-xl font-bold text-[#211D1B]">
+                Recent Orders
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Latest distributor order activity.
-              </p>
             </div>
             <Link
               to="/orders"
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              className="text-xs font-bold text-[#D96A25] hover:text-[#BE571B] flex items-center gap-1"
             >
               <span>All orders</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowUpRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="p-5 flex-1 overflow-x-auto">
+          <div className="pt-4 flex-1 overflow-x-auto">
             {recentOrders.length === 0 ? (
               <EmptyState
                 title="No orders placed yet"
                 description="Orders created via assistant or portal will appear here."
               />
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="text-xs font-semibold text-slate-400 border-b border-slate-100">
-                    <th className="pb-2">Order #</th>
-                    <th className="pb-2">Status</th>
-                    <th className="pb-2">Items</th>
-                    <th className="pb-2 text-right">Grand Total</th>
+              <table className="w-full text-left text-sm divide-y divide-[#E8D5BD]/60">
+                <thead className="bg-[#EBD1B2] text-xs font-semibold text-[#817568] uppercase tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3 rounded-l-2xl">Order #</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Items</th>
+                    <th className="px-4 py-3 text-right rounded-r-2xl">Grand Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E8D5BD]/60">
                   {recentOrders.map((order) => (
-                    <tr key={order.order_number} className="hover:bg-slate-50">
-                      <td className="py-2.5 font-medium text-slate-900">
+                    <tr key={order.order_number} className="hover:bg-[#FAF2E8] transition-colors">
+                      <td className="px-4 py-3 font-semibold">
                         <Link
                           to={`/orders?order=${order.order_number}`}
-                          className="hover:underline text-blue-600"
+                          className="hover:underline text-[#211D1B]"
                         >
                           {order.order_number}
                         </Link>
                       </td>
-                      <td className="py-2.5">
+                      <td className="px-4 py-3">
                         <StatusBadge status={order.status} />
                       </td>
-                      <td className="py-2.5 text-slate-600">
+                      <td className="px-4 py-3 text-[#817568]">
                         {order.items?.length || 0} line(s)
                       </td>
-                      <td className="py-2.5 text-right font-medium text-slate-900">
-                        ₹{parseFloat(order.grand_total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      <td className="px-4 py-3 text-right font-semibold text-[#211D1B]">
+                        ₹{parseFloat(order.grand_total || 0).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
                       </td>
                     </tr>
                   ))}

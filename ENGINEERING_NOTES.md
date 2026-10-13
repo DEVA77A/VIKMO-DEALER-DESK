@@ -40,19 +40,32 @@ These notes are designed to prepare you for defending and explaining your implem
 
 ---
 
-### 4. How the AI Assistant Chooses & Calls Tools
+### 4. AI Assistant Multi-Provider Architecture & Reliability Overhaul
 - **Endpoint**: `POST /api/assistant/chat/` (`core/assistant/views.py`).
-- **Engine**: `AssistantEngine` (`core/assistant/agent.py`).
-- **LLM Tool Calling**:
-  - The assistant uses Google's `google-genai` SDK with `gemini-2.5-flash`.
-  - Tools declared: `search_parts`, `check_stock`, `create_draft_order` in `core/assistant/tools.py`.
-  - When Gemini determines a tool call is needed, it returns a `function_call` in its candidate parts.
-  - The Python engine catches the function call, executes it against `AssistantToolRegistry`, and appends the result as a `Part.from_function_response(...)`.
-  - The loop continues until the model produces the final natural-language response.
-- **Chronological Tracking**:
-  - Every tool execution appends `{ "name": fn_name, "arguments": fn_args }` to `tool_calls` in actual execution order.
-- **Safe Fallback**:
-  - If `GEMINI_API_KEY` is not provided in local/test environments, `_run_deterministic` uses exact regex and intent parsing to run the identical tools and return properly grounded answers.
+- **Orchestration Layer**: `MultiProviderOrchestrator` (`core/assistant/providers.py`) driving `AssistantEngine` (`core/assistant/agent.py`).
+- **Three-Tier Failover Policy**:
+  1. **Primary Provider — Google Gemini**:
+     - Configured via `GEMINI_API_KEY`, `GEMINI_MODEL` (default: `gemini-3.5-flash-lite`), and `GEMINI_MODEL_PREFERENCES` (`gemini-3.5-flash-lite,gemini-flash-lite-latest,gemini-3.8-flash,gemini-3.1-flash-lite`).
+     - Supports multi-turn function calling (`search_parts`, `check_stock`, `create_draft_order`) with automatic function calling disabled.
+     - Quota tracking: Detects HTTP 429 `RESOURCE_EXHAUSTED` and immediately stops retrying models that share the same exhausted daily project quota, cleanly failing over to Groq.
+     - Model availability rotation: Rotates across verified models on transient 404 or 503 spikes.
+  2. **Secondary Provider — Groq**:
+     - Configured via `GROQ_API_KEY`, `GROQ_MODEL` (`llama-3.3-70b-versatile`), and `GROQ_ENABLED=true`.
+     - Official `groq` SDK integration with OpenAI-compatible tool calling definitions.
+     - Automatically selected when Gemini is unavailable, unconfigured, or rate-limited.
+  3. **Tertiary Provider — Deterministic Fallback Engine**:
+     - Intent-aware, database-grounded engine active when both LLMs are unavailable or disabled.
+     - Routes across 9 intents: Greetings, Stock queries, Price lookups, Typo-tolerant Product Searches, Draft Orders, 4-Week Demand Forecasting (`ml/forecast.csv`), Reorder Recommendations (`lead_times.csv` + stock), Off-topic defense, and Clarification questions.
+- **Root Cause of Original Failure ("did you have scliencer")**:
+  1. In the legacy `agent.py`, `search_triggers` contained `"do you have"` but lacked `"did you have"`, and had zero typo tolerance for misspelled tokens like `"scliencer"`.
+  2. The legacy default model `gemini-flash-latest` aliased to `gemini-3.8-flash`, which had hit the free-tier quota limit (HTTP 429 `RESOURCE_EXHAUSTED`).
+  3. When Gemini threw an exception after issuing 2 tool calls, the tool calls remained in `tool_calls`, while execution fell back to `_run_deterministic`.
+  4. Because `"did you have scliencer"` matched none of the rigid regex triggers, it fell through to the last line returning the generic greeting (`"Hello! I am your VIKMO DealerDesk Assistant..."`).
+  5. The UI displayed "Executed 2 Tool Calls" alongside the fallback greeting, confusing the user.
+- **Resolution & Protections**:
+  - **Typo Tolerance**: Standard library `difflib.get_close_matches` against domain vocabulary normalizes `"scliencer"` $\rightarrow$ `"silencer"`. Searches catalogue, confirms silencers are not in catalogue, and truthfully explains available categories.
+  - **State Preservation & No Duplicate Orders**: If a provider executes `create_draft_order` and crashes before generating final text, `tool_registry._created_orders_cache` and recorded actions preserve the created order. The deterministic engine formulates the order confirmation directly without creating a second order in PostgreSQL.
+  - **Truthful UI Badges**: Frontend displays `Gemini Live`, `Groq Live`, or `Deterministic Fallback` based on backend `res.provider`. Tool call counts accurately reflect executed tools.
 
 ---
 

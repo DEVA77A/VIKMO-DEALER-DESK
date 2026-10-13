@@ -8,6 +8,7 @@ requests>=2.31
 
 # AI / LLM Assistant
 google-genai>=0.1.1
+groq>=0.18.0
 
 # ML & Forecasting
 pandas>=2.0

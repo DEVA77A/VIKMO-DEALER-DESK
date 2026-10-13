@@ -2,23 +2,45 @@ import React from "react";
 
 export function StatusBadge({ status }) {
   const statusConfig = {
-    DRAFT: { bg: "bg-amber-50 text-amber-700 border-amber-200", label: "Draft" },
-    CONFIRMED: { bg: "bg-blue-50 text-blue-700 border-blue-200", label: "Confirmed" },
-    DISPATCHED: { bg: "bg-indigo-50 text-indigo-700 border-indigo-200", label: "Dispatched" },
-    DELIVERED: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200", label: "Delivered" },
-    CANCELLED: { bg: "bg-rose-50 text-rose-700 border-rose-200", label: "Cancelled" },
+    DRAFT: {
+      bg: "bg-[#F9EEDD] text-[#8F6322] border-[#E7D0B4]",
+      label: "Draft",
+      dot: "bg-[#D69B43]",
+    },
+    CONFIRMED: {
+      bg: "bg-[#F4D5B7] text-[#9A4613] border-[#E5BC96]",
+      label: "Confirmed",
+      dot: "bg-[#D96A25]",
+    },
+    DISPATCHED: {
+      bg: "bg-[#EBDDCB] text-[#735A42] border-[#D9C4AC]",
+      label: "Dispatched",
+      dot: "bg-[#9A7B5C]",
+    },
+    DELIVERED: {
+      bg: "bg-[#E6EFE4] text-[#3F6236] border-[#C7DCBF]",
+      label: "Delivered",
+      dot: "bg-[#73956A]",
+    },
+    CANCELLED: {
+      bg: "bg-[#F7E3E0] text-[#9E3324] border-[#EBBFB8]",
+      label: "Cancelled",
+      dot: "bg-[#B94A3A]",
+    },
   };
 
   const config = statusConfig[status] || {
-    bg: "bg-slate-50 text-slate-700 border-slate-200",
+    bg: "bg-[#F2DEC4] text-[#817568] border-[#E8D5BD]",
     label: status,
+    dot: "bg-[#817568]",
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.bg}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-medium border ${config.bg}`}
     >
-      {config.label}
+      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+      <span>{config.label}</span>
     </span>
   );
 }
@@ -26,20 +48,23 @@ export function StatusBadge({ status }) {
 export function StockBadge({ stock }) {
   if (stock === 0) {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F7E3E0] text-[#9E3324] border border-[#EBBFB8]">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#B94A3A]" />
         Out of Stock
       </span>
     );
   }
   if (stock < 20) {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F9EEDD] text-[#8F6322] border border-[#E7D0B4]">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#D69B43]" />
         Low ({stock})
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E6EFE4] text-[#3F6236] border border-[#C7DCBF]">
+      <span className="w-1.5 h-1.5 rounded-full bg-[#73956A]" />
       {stock} units
     </span>
   );

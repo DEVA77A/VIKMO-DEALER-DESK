@@ -98,7 +98,7 @@ class ReorderSuggestionsView(APIView):
             sales_map[sku].sort(key=lambda x: x["week_start"])
 
         # 4. Fetch live stock from Product table
-        live_products = {p.sku: p.stock for p in Product.objects.filter(sku__in=ordered_skus)}
+        live_products = {p.sku.strip().upper(): p.stock for p in Product.objects.filter(sku__in=ordered_skus)}
 
         # 5. Compute reorder metrics for all 40 SKUs
         results = []
@@ -128,7 +128,7 @@ class ReorderSuggestionsView(APIView):
             reorder_point = round(lead_time_demand + safety_stock, 1)
 
             # current_stock: LIVE available stock
-            current_stock = live_products.get(sku, 0)
+            current_stock = live_products.get(sku.strip().upper(), 0)
 
             # reorder_qty = max(0, ceil(reorder_point - current_stock))
             reorder_qty = max(0, math.ceil(reorder_point - current_stock))
